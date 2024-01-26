@@ -5,31 +5,28 @@ import requests
 
 app = Flask(__name__)
 
-# Function to get the access token
-def get_access_token():
-    # Run the 'gcloud auth print-access-token' command and get the output
-    access_token = subprocess.getoutput('gcloud auth print-access-token')
-    print(access_token.strip())
-    return access_token.strip()
+# fetches the access token
+access_token = subprocess.getoutput('gcloud auth print-access-token').strip()
 
-access_token = get_access_token()
 
+# triggers the send request function
 @app.route('/send_request', methods=['POST'])
 def send_request():
     try:
-        # Get JSON data from the request
+        # gets json data ( handles incoming request )
         request_data = request.json
 
-        # URL of the API endpoint
-        url = "https://us-central1-aiplatform.googleapis.com/v1/projects/networks-412412/locations/us-central1/publishers/google/models/gemini-pro:streamGenerateContent"
+        # api endpoint
+        url = ("https://us-central1-aiplatform.googleapis.com/v1/projects/networks-412412/locations/us-central1"
+               "/publishers/google/models/gemini-pro:streamGenerateContent")
 
-        # Headers for the request
+        # defining the headers
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json; charset=utf-8"
         }
 
-        # Send the POST request
+        # uses requests library to post and get the response and put it in a variable
         response = requests.post(url, headers=headers, json=request_data)
 
         if response.status_code == 200:
@@ -45,5 +42,6 @@ def send_request():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 if __name__ == '__main__':
-    app.run(debug=True, port=8000)
+    app.run(debug=False, port=8000)

@@ -1,15 +1,12 @@
 import streamlit as st
 import requests
 
+
 st.title('Send Request to Server')
+
 
 # user input text-field
 user_input = st.text_area("Enter your request:")
-
-
-
-
-max_output_tokens = st.number_input("Max Output Tokens", min_value=1, max_value=2048, value=2048)
 
 
 if st.button('Submit'):
@@ -28,12 +25,12 @@ if st.button('Submit'):
         "generation_config": {
             "temperature": 0.9,
             "topP": 1.0,
-            "maxOutputTokens": max_output_tokens
+            "maxOutputTokens": 2048
         }
     }
 
     # for displaying the actual json file
-    #st.json(request_data)
+    # st.json(request_data)
 
     # sending the json to the server
     url = 'http://localhost:8000/send_request'

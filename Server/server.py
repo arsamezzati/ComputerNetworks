@@ -12,6 +12,8 @@ def get_access_token():
     print(access_token.strip())
     return access_token.strip()
 
+access_token = get_access_token()
+
 @app.route('/send_request', methods=['POST'])
 def send_request():
     try:
@@ -23,7 +25,7 @@ def send_request():
 
         # Headers for the request
         headers = {
-            "Authorization": f"Bearer {get_access_token()}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json; charset=utf-8"
         }
 

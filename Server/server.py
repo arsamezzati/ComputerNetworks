@@ -1,51 +1,47 @@
-import streamlit as st
+from flask import Flask, request, jsonify
+import subprocess
+import json
 import requests
 
-st.title('Send Request to Server')
+app = Flask(__name__)
 
-# initializing the session so the previous messages would show up after asking a new one
-if 'conversation_history' not in st.session_state:
-    st.session_state.conversation_history = []
-# this happens when user presses Enter
-if prompt := st.chat_input("Ask your question, press Enter to submit"):
-    request_data = {
-        "contents": {
-            "role": "user",
-            "parts": prompt
-        },
-        "safety_settings": {
-            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            "threshold": "BLOCK_LOW_AND_ABOVE"
-        },
-        "generation_config": {
-            "temperature": 0.9,
-            "topP": 1.0,
-            "maxOutputTokens": 2048
+# fetches the access token
+access_token = subprocess.getoutput('gcloud auth print-access-token').strip()
+
+
+# triggers the send request function
+@app.route('/send_request', methods=['POST'])
+def send_request():
+    try:
+        # gets json data ( handles incoming request )
+        request_data = request.json
+
+        # api endpoint
+        url = ("https://us-central1-aiplatform.googleapis.com/v1/projects/networks-412412/locations/us-central1"
+               "/publishers/google/models/gemini-pro:streamGenerateContent")
+
+        # defining the headers
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json; charset=utf-8"
         }
-    }
-    url = 'http://localhost:8000/send_request'
-    response = requests.post(url, json=request_data)
 
-    # checking the response code and displaying the Q/A
-    if response.status_code == 200:
-        response_data = response.json()
-        # adds the question + answer to the session.
-        st.session_state.conversation_history.append((prompt, response_data))
+        # uses requests library to post and get the response and put it in a variable
+        response = requests.post(url, headers=headers, json=request_data)
 
-        # it shows the history + new Q/A
-        for prompt, response in st.session_state.conversation_history:
+        if response.status_code == 200:
+            # Save the response to response.json file
+            response_json = response.json()
+            with open('response.json', 'w') as file:
+                json.dump(response_json, file, indent=4)
 
-            with st.chat_message("user"):
-                st.write(prompt)
-            with st.chat_message("assistant"):
-                for item in response:  # Assuming response is a list of items
-                    for candidate in item.get("candidates", []):
-                        content = candidate.get("content", {})
-                        text_parts = content.get("parts", [])
+            # Send the response.json file back to the client
+            return jsonify(response_json)
+        else:
+            return jsonify({"error": "Failed to get a valid response from the API."}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-                        for part in text_parts:
-                            text = part.get("text", "")
-                            st.write(text)
 
-    else:
-        st.error(f"Failed to get response. Status code: {response.status_code}")
+if __name__ == '__main__':
+    app.run(debug=False, port=8000)

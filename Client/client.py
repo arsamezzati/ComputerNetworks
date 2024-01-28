@@ -3,7 +3,7 @@ import requests
 
 st.title('Send Request to Server')
 
-# initializing the session if not exists already
+# Initialize session state for conversation history if not already present
 if 'conversation_history' not in st.session_state:
     st.session_state.conversation_history = []
 
@@ -11,7 +11,7 @@ if prompt := st.chat_input("Ask your question, press Enter to submit"):
     request_data = {
         "contents": {
             "role": "user",
-            "parts": prompt
+            "parts": [{"text": prompt}]  # parts should be a list of dictionaries
         },
         "safety_settings": {
             "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
@@ -26,19 +26,19 @@ if prompt := st.chat_input("Ask your question, press Enter to submit"):
     url = 'http://localhost:8000/send_request'
     response = requests.post(url, json=request_data)
 
-    # checking http response status code
+    # Displaying the response
     if response.status_code == 200:
         response_data = response.json()
-        # saving the response to history
+        # Store user question and server response in conversation history
         st.session_state.conversation_history.append((prompt, response_data))
 
-        # displaying old and new Q/A by iterating through the key value pair
+        # Display conversation history
         for prompt, response in st.session_state.conversation_history:
 
             with st.chat_message("user"):
                 st.write(prompt)
             with st.chat_message("assistant"):
-                for item in response:
+                for item in response:  # Assuming response is a list of items
                     for candidate in item.get("candidates", []):
                         content = candidate.get("content", {})
                         text_parts = content.get("parts", [])

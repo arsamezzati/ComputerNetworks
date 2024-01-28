@@ -1,19 +1,19 @@
-#The Project
-##Table of Contents
-1.[Overview](#overview)
-  1.1[Client](#client)
-  1.2[Server](#server)
-2[Client Details](#client-details)
+# The Project
+## Table of Contents
+1. [Overview](#overview)  
+  1.1. [Client](#client)  
+  1.2. [ Server](#server)  
+2. [Client Details](#client-details)  
 
-##Overview
-###Client
+## Overview
+### Client
 The client ueses ` requests ` library and ` streamlit `.
 it uses request to send http requests to the server and streamlit for the front-end side to show the result and enables the user to write and send the request.
 ###Server
 The server uses flask for the web server to open a port and accept requests. it creates the main http request and sends it to the gemini pro api
 it also sends back the response received from google gemini pro api to the client.
 
-##Client Details
+## Client Details
 ```python
   user_input = st.text_area("Enter your request:")
 ```

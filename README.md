@@ -16,18 +16,18 @@ it also sends back the response received from google gemini pro api to the clien
 
 ## Client Details
 ```python
-  user_input = st.text_area("Enter your request:")
+  # initializing the session if not exists already
+if 'conversation_history' not in st.session_state:
+    st.session_state.conversation_history = []
 ```
-this is the text area that the user can write the question to be sent to the server.
+this is a session which is used in streamlit to keep state. 
+
 ```python
-  if st.button('Submit'):
-    # creating the json file after submit button is clicked
+  if prompt := st.chat_input("Ask your question, press Enter to submit"):
     request_data = {
         "contents": {
             "role": "user",
-            "parts": {
-                "text": user_input
-            }
+            "parts": prompt
         },
         "safety_settings": {
             "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
@@ -40,8 +40,8 @@ this is the text area that the user can write the question to be sent to the ser
         }
     }
 ```
-after the submit button is clicked, the request_data is created as a dictionary variable and the "text" key's value is set to the text in the text field.
-the other headers of the request is hard coded since I didn't want to user to be bothered witht it, although it can be easily controlled by the user through some sliders and select/options.
+Whenver user prompt is submitted ( by pressing enter ), this block of code checks if it is null or not and creates a request. the first like also creates the chat_input section.
+
 ```python
   url = 'http://localhost:8000/send_request'
     response = requests.post(url, json=request_data)
@@ -49,23 +49,31 @@ the other headers of the request is hard coded since I didn't want to user to be
 In this section we initialize a variable named "url" and put the url + port of the server.
 then we send a request using the `request` library that we imported to the server ( post method since we want to send something to the server ) and convert the request_data to a json file.
 ```python
- if response.status_code == 200:
-        st.success("Results: ")
+     if response.status_code == 200:
         response_data = response.json()
-        for item in response_data:
-            for candidate in item.get("candidates", []):
-                content = candidate.get("content", {})
-                text_parts = content.get("parts", [])
-                for part in text_parts:
-                    text = part.get("text", "")
-                    st.write(text)
+        # saving the response to history
+        st.session_state.conversation_history.append((prompt, response_data))
+
+        # displaying old and new Q/A by iterating through the key value pair
+        for prompt, response in st.session_state.conversation_history:
+
+            with st.chat_message("user"):
+                st.write(prompt)
+            with st.chat_message("assistant"):
+                for item in response:
+                    for candidate in item.get("candidates", []):
+                        content = candidate.get("content", {})
+                        text_parts = content.get("parts", [])
+
+                        for part in text_parts:
+                            text = part.get("text", "")
+                            st.write(text)
+
     else:
         st.error(f"Failed to get response. Status code: {response.status_code}")
 ```
-in this section we display the message by iterating through different sections of the json response message that we received in the client and display the results that we need,
-I used this iterative method to improve the visuals of the application.
-as you can see if the response status code was 200 which means OK, we display the message and if it was not 200, which means some error has occured, we show an error code and the error message.
-
+in this section, the application checks the response from server.py, if the response code was 200 ( OK ) it adds the key value pair of prompt and response. then iterate through it to show ever Q & A since the application started.
+if it wasn't 200, it shows the error code instead and doesn't add anything else.
 ## Server Details
 ```python
 app = Flask(__name__)
